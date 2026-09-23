@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор палитры темы</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #ffffff; color: #222222; margin: 0; padding: 20px; text-align: center;
+        }
+        h3 { margin-bottom: 20px; }
+        .section { background: #f4f4f5; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        .count-btn {
+            background: #e4e4e7; border: none; padding: 10px 20px;
+            margin: 5px; border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
+        .count-btn.active { background: #3498db; color: #ffffff; }
+        .color-pickers { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .picker-row { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+        input[type="color"] { border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; }
+        #save-btn {
+            width: 100%; background: #3498db; color: #ffffff; border: none;
+            padding: 15px; border-radius: 10px; font-size: 16px; font-weight: bold;
+            margin-top: 10px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h3>🎨 Настройка цветов сообщения</h3>
+
+    <div class="section">
+        <p>Количество цветов в градиенте:</p>
+        <button class="count-btn active" id="btn-1" onclick="setCount(1)">1</button>
+        <button class="count-btn" id="btn-2" onclick="setCount(2)">2</button>
+        <button class="count-btn" id="btn-3" onclick="setCount(3)">3</button>
+        <button class="count-btn" id="btn-4" onclick="setCount(4)">4</button>
+    </div>
+
+    <div class="section">
+        <p>Выберите оттенки:</p>
+        <div class="color-pickers" id="pickers-container"></div>
+    </div>
+
+    <button id="save-btn" onclick="sendDataToBot()">✨ Подтвердить палитру</button>
+
+    <script>
+        let currentCount = 1;
+        let defaultColors = ["#3498db", "#8e44ad", "#e74c3c", "#f1c40f"];
+
+        // Безопасная инициализация Telegram API
+        let tg = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            try {
+                tg.expand(); // Разворачиваем шторку в ТГ, если это возможно
+            } catch(e) { console.log("Запущено вне ТГ"); }
+        }
+
+        function renderPickers() {
+            const container = document.getElementById('pickers-container');
+            if (!container) return;
+            container.innerHTML = '';
+            for (let i = 0; i < currentCount; i++) {
+                container.innerHTML += `
+                    <div class="picker-row">
+                        <label>Цвет ${i+1}:</label>
+                        <input type="color" id="color-${i}" value="${defaultColors[i]}">
+                    </div>
+                `;
+            }
+        }
+
+        function setCount(count) {
+            currentCount = count;
+            // Переключаем активные классы у кнопок цифр вручную
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`btn-${i}`);
+                if (btn) {
+                    if (i === count) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            }
+            renderPickers();
+        }
+
+        function sendDataToBot() {
+            let selectedColors = [];
+            for (let i = 0; i < currentCount; i++) {
+                const picker = document.getElementById(`color-${i}`);
+                if (picker) {
+                    selectedColors.push(picker.value);
+                }
+            }
+           
+            const finalString = selectedColors.join(',');
+
+            // Если открыто в Телеграме — отправляем данные боту
+            if (tg && tg.sendData) {
+                tg.sendData(finalString);
+            } else {
+                // Если открыто в обычном браузере — просто покажем результат в окошке
+                alert("Палитра выбрана в браузере: " + finalString + "\nВнутри Telegram бот бы уже собирал тему!");
+            }
+        }
+
+        // Запуск при старте страницы
+        renderPickers();
+    </script>
+</body>
+</html>

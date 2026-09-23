@@ -92,22 +92,28 @@
         function sendDataToBot() {
             let selectedColors = [];
             for (let i = 0; i < currentCount; i++) {
-                const picker = document.getElementById(`color-${i}`);
+                const picker = document.getElementById('color-${i}');
                 if (picker) {
                     selectedColors.push(picker.value);
                 }
             }
-           
+            
             const finalString = selectedColors.join(',');
 
-            // Если открыто в Телеграме — отправляем данные боту
-            if (tg && tg.sendData) {
-                tg.sendData(finalString);
+            // Жесткая и прямая проверка наличия Telegram WebApp API
+            // Проверяем как глобальный объект, так и встроенный в window
+            const tgApp = window.Telegram?.WebApp || Telegram?.WebApp;
+
+            if (tgApp && typeof tgApp.sendData === 'function') {
+                // Если мы внутри ТГ — отправляем данные скрипту бота
+                tgApp.sendData(finalString);
             } else {
-                // Если открыто в обычном браузере — просто покажем результат в окошке
+                // Оставляем только для тестов в обычном браузере на ПК
                 alert("Палитра выбрана в браузере: " + finalString + "\nВнутри Telegram бот бы уже собирал тему!");
             }
         }
+    
+    
 
         // Запуск при старте страницы
         renderPickers();
